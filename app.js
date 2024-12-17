@@ -16,7 +16,7 @@ const API_URL =
 
 app.get("/", (req, res) => {
     res.send("API running successfully.");
-    });
+});
 
 app.post("/api/gemini", async (req, res) => {
   const { message } = req.body;
