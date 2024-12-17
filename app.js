@@ -6,19 +6,38 @@ require("dotenv").config();
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
-app.use(bodyParser.json());
-
 const API_KEY = process.env.API_KEY;
 const API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
   API_KEY;
 
-app.get("/", (req, res) => {
-    res.send("API running successfully.");
+// Explicit CORS configuration
+const corsOptions = {
+  origin: "*", // Replace "*" with specific frontend origin if needed
+  methods: ["POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+};
+
+app.use(cors(corsOptions));
+app.use(bodyParser.json());
+
+// Handle preflight OPTIONS requests for /api/gemini
+app.options("/api/gemini", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  return res.sendStatus(204); // No content
 });
 
+// Root endpoint
+app.get("/", (req, res) => {
+  res.send("API running successfully.");
+});
+
+// POST endpoint for Gemini API
 app.post("/api/gemini", async (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*"); // CORS header for POST requests
+
   const { message } = req.body;
 
   if (!message) {
@@ -44,10 +63,15 @@ app.post("/api/gemini", async (req, res) => {
     res.status(200).json({ response: data });
   } catch (error) {
     console.error("Error fetching response from Gemini API:", error);
-    res.status(500).json({ error: "Error fetching response from Gemini API" });
+    res
+      .status(500)
+      .json({
+        error: "An error occurred while fetching response from Gemini API",
+      });
   }
 });
 
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
