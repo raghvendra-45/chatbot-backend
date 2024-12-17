@@ -14,6 +14,10 @@ const API_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
   API_KEY;
 
+app.get("/", (req, res) => {
+    res.send("API running successfully.");
+    });
+
 app.post("/api/gemini", async (req, res) => {
   const { message } = req.body;
 
