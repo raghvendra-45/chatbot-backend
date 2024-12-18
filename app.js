@@ -4,69 +4,41 @@ const bodyParser = require("body-parser");
 require("dotenv").config();
 
 const app = express();
-const PORT = 5000;
+const googleApiKey = process.env.API_KEY;
+const googleApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${googleApiKey}`;
 
-const API_KEY = process.env.API_KEY;
-const API_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" +
-  API_KEY;
-
-const corsOptions = {
-  origin: "*",
-  methods: ["POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-};
-
-app.use(cors(corsOptions));
+app.use(cors({ origin: "*", methods: ["POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 app.use(bodyParser.json());
 
 app.options("/api/gemini", (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type");
-  return res.sendStatus(204); // No content
+  res.sendStatus(204);
 });
 
-app.get("/", (req, res) => {
-  res.send("API running successfully.");
-});
+app.get("/", (req, res) => res.send("Server is working!"));
 
 app.post("/api/gemini", async (req, res) => {
   res.header("Access-Control-Allow-Origin", "*");
+  const { userMessage } = req.body;
 
-  const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: "Message is required" });
-  }
+  if (!userMessage) return res.status(400).json({ error: "User message is missing." });
 
   try {
-    const response = await fetch(API_URL, {
+    const apiResponse = await fetch(googleApiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: message }] }],
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: userMessage }] }] }),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch from Gemini API");
-    }
+    if (!apiResponse.ok) throw new Error("Request to Gemini API failed.");
 
-    const data = await response.json();
-    res.status(200).json({ response: data });
+    const result = await apiResponse.json();
+    res.status(200).json({ response: result });
   } catch (error) {
-    console.error("Error fetching response from Gemini API:", error);
-    res
-      .status(500)
-      .json({
-        error: "An error occurred while fetching response from Gemini API",
-      });
+    res.status(500).json({ error: "Something went wrong while reaching Gemini API." });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(5000, () => console.log("Server is live at http://localhost:5000"));
